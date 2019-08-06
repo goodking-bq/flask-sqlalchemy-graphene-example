@@ -1,0 +1,21 @@
+[[source]]
+name = "pypi"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+verify_ssl = true
+
+[dev-packages]
+black = "*"
+flask-migrate = "*"
+pylint-flask = "*"
+
+[packages]
+flask = "*"
+flask-graphql = "*"
+flask-sqlalchemy = "*"
+graphene-sqlalchemy = "*"
+
+[requires]
+python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true
