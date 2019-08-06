@@ -1,9 +1,12 @@
 from example_app.extensions import db
 
 from sqlalchemy import func
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.associationproxy import association_proxy
 
 user_role = db.Table(
     "user_role",
+    db.metadata,
     db.Column("user_id", db.Integer, db.ForeignKey("user.id")),
     db.Column("role_id", db.Integer, db.ForeignKey("role.id")),
     db.UniqueConstraint("user_id", "role_id"),
@@ -15,18 +18,16 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(20))
     password = db.Column(db.String(100), nullable=False)
-    roles = db.relationship(
-        "Role",
-        secondary=user_role,
-        backref=db.backref("users", lazy="dynamic"),
-        lazy="dynamic",
-    )
+    roles = db.relationship("Role", secondary=user_role, back_populates="users")
+    role_names = key_ids = association_proxy("roles", "name")
 
 
 class Role(db.Model):
     __tablename__ = "role"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255))
+
+    users = db.relationship("User", secondary=user_role, back_populates="roles")
 
 
 class Article(db.Model):

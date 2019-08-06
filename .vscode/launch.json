@@ -19,7 +19,7 @@
                 "--debugger",
                 "--reload",
                 "--port",
-                "5001"
+                "5002"
             ],
             "jinja": true
         }

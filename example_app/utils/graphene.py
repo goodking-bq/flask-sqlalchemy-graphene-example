@@ -13,24 +13,29 @@ from graphene.types.utils import yank_fields_from_attrs
 from graphene_sqlalchemy import SQLAlchemyConnectionField
 from graphene_sqlalchemy.converter import (
     convert_sqlalchemy_type,
+    convert_sqlalchemy_relationship,
     get_column_doc,
     is_column_nullable,
     Dynamic,
 )
-from graphene_sqlalchemy.types import construct_fields, SQLAlchemyObjectType
 from graphene_sqlalchemy.types import (
     sort_argument_for_object_type,
     default_connection_field_factory,
     get_global_registry,
     construct_fields,
     SQLAlchemyObjectType,
+    convert_sqlalchemy_column,
+    convert_sqlalchemy_composite,
+    convert_sqlalchemy_hybrid_method,
 )
 from graphql_relay.node.node import from_global_id
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import or_, not_
-
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.inspection import inspect as sqlalchemyinspect
 from example_app.extensions import db
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 __author__ = "golden"
 __date__ = "2019/8/2"
@@ -132,36 +137,10 @@ class CustomConnection(graphene.relay.Connection):
         return root.iterable.limit(None).offset(None).count()
 
 
-@convert_sqlalchemy_type.register(ARRAY)
-def convert_column_to_string(type, column, registry=None):
-    return graphene.List(
-        of_type=graphene.String,
-        description=get_column_doc(column),
-        required=not (is_column_nullable(column)),
-    )
-
-
-@convert_sqlalchemy_type.register(JSONB)
-def convert_column_to_json(type, column, registry=None):
-    return graphene.JSONString(
-        description=get_column_doc(column), required=not (is_column_nullable(column))
-    )
-
-
 class SQLAlchemyInputObjectType(graphene.InputObjectType):
     @classmethod
     def __init_subclass_with_meta__(
-        cls,
-        model=None,
-        registry=None,
-        skip_registry=False,
-        only_fields=[],
-        exclude_fields=[],
-        connection=None,
-        use_connection=None,
-        interfaces=(),
-        id=None,
-        **options
+        cls, model=None, registry=None, only_fields=[], exclude_fields=[], **options
     ):
         # always pull 'id' out to a separate id argument
         exclude_fields.append("id")
@@ -178,12 +157,12 @@ class SQLAlchemyInputObjectType(graphene.InputObjectType):
                 autoexclude.append(col.name)
         sqla_fields = yank_fields_from_attrs(
             construct_fields(
-                SQLAlchemyObjectTypes().get(model),
-                model,
-                registry,
-                tuple(only_fields),
-                tuple(exclude_fields + autoexclude),
-                default_connection_field_factory,
+                obj_type=SQLAlchemyObjectTypes().get(model),
+                model=model,
+                registry=registry,
+                only_fields=tuple(only_fields),
+                exclude_fields=tuple(exclude_fields + autoexclude),
+                connection_field_factory=default_connection_field_factory,
             ),
             _as=graphene.Field,
         )
@@ -245,14 +224,15 @@ class SQLAlchemyMutation(graphene.Mutation):
         meta.model = model
         meta.delete = delete
         _out_name = "Edit"
-
+        if meta.create == True:
+            _out_name = "Create"
+        if meta.delete == True:
+            _out_name = "Delete"
         if arguments is None and not hasattr(cls, "Arguments"):
             arguments = {}
             # 不是创建
             if meta.create == False:
                 arguments["id"] = graphene.ID(required=True)
-            else:
-                _out_name = "Create"
             # 不是删除
             if meta.delete == False:
                 input_meta = type(
@@ -286,6 +266,7 @@ class SQLAlchemyMutation(graphene.Mutation):
 
     @classmethod
     def mutate(cls, self, info, **kwargs):
+        kwargs = input_to_dictionary(kwargs)
         session = db.session
 
         meta = cls._meta
@@ -400,21 +381,36 @@ class QueryObjectType(graphene.ObjectType):
 class MutationObjectType(graphene.ObjectType):
     @classmethod
     def __init_subclass_with_meta__(
-        cls, model_mudule, exclude_models=[], _meta=None, **options
+        cls, model_mudule, include_object=[], _meta=None, **options
     ):
         if not _meta:
             _meta = ObjectTypeOptions(cls)
         fields = OrderedDict()
+        include_object_names = list()
+        for obj in include_object:
+            action = "update"
+            if obj._meta.create is True:
+                action = "create"
+            if obj._meta.delete is True:
+                action = "delete"
+            name = "%s%s" % (action, obj._meta.model.__name__)
+            include_object_names.append(name)
+            fields[name] = obj.Field()
         for model_name in dir(model_mudule):
             model_obj = getattr(model_mudule, model_name)
             if isinstance(model_obj, DefaultMeta):
-                fields.update(
-                    {
-                        "create%s" % model_name: model_create(model_obj).Field(),
-                        "update%s" % model_name: model_update(model_obj).Field(),
-                        "delete%s" % model_name: model_delete(model_obj).Field(),
-                    }
-                )
+                if "create%s" % model_name not in include_object_names:
+                    fields.update(
+                        {"create%s" % model_name: model_create(model_obj).Field()}
+                    )
+                if "update%s" % model_name not in include_object_names:
+                    fields.update(
+                        {"update%s" % model_name: model_update(model_obj).Field()}
+                    )
+                if "delete%s" % model_name not in include_object_names:
+                    fields.update(
+                        {"delete%s" % model_name: model_delete(model_obj).Field()}
+                    )
         if _meta.fields:
             _meta.fields.update(fields)
         else:
@@ -422,4 +418,3 @@ class MutationObjectType(graphene.ObjectType):
         return super(MutationObjectType, cls).__init_subclass_with_meta__(
             _meta=_meta, **options
         )
-

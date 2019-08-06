@@ -7,6 +7,8 @@ verify_ssl = true
 black = "*"
 flask-migrate = "*"
 pylint-flask = "*"
+flake8 = "*"
+autopep8 = "*"
 
 [packages]
 flask = "*"

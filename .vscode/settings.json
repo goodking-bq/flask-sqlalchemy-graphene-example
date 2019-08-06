@@ -1,6 +1,5 @@
 {
     "python.pythonPath": "/root/.local/share/virtualenvs/flask-sqlalchemy-graphene-example-HZa3KyKh/bin/python",
-    "python.formatting.provider": "black",
     "files.eol": "\n",
     "python.autoComplete.addBrackets": true,
     "editor.formatOnSave": true,
@@ -8,5 +7,16 @@
     "python.linting.pylintArgs": [
         "--load-plugins",
         "pylint_flask"
-    ]
+    ],
+    "sqltools.connections": [
+        {
+            "database": "D:\\flask-sqlalchemy-graphene-example\\example.db",
+            "dialect": "SQLite",
+            "name": "s"
+        }
+    ],
+    "python.linting.flake8Enabled": false,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.formatting.provider": "black"
 }
