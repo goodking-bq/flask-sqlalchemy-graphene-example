@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 app.config.update(
     {
-        "SQLALCHEMY_DATABASE_URI": "sqlite:////mnt/d/flask-sqlalchemy-graphene-example/example.db",
+        "SQLALCHEMY_DATABASE_URI": "sqlite:////data/example.db",
         "SQLALCHEMY_TRACK_MODIFICATIONS": True,
         "DEBUG": True,
     }
