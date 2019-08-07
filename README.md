@@ -13,6 +13,9 @@
 > flask db upgrade # init db end
 
 > flask run
+
+> # or run in docker 
+> docker run -p 5000:5000 goldenz/flask-sqlalchemy-graphene-example
 ```
 
 > now you can visit this [url](http://127.0.0.1:5000/graphql)

@@ -1,8 +1,7 @@
-from .graphene import (
+from .mutation import (
     MutationObjectType,
-    QueryObjectType,
     SQLAlchemyMutation,
     SQLAlchemyInputObjectType,
     input_to_dictionary,
 )
-
+from .query import QueryObjectType,SQLAlchemyObjectTypes
