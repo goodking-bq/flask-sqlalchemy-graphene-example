@@ -34,7 +34,7 @@ class UserCreateMutation(SQLAlchemyMutation):
         user.name = data.get("name", "defautltname")
         user.password = data.get("password")
 
-        for _id in data.get("roles"):
+        for _id in data.get("roles", []):
             rid = from_global_id(_id)[1]
             user.roles = [Role.query.get(rid) for i in data.get("roles")]
         db.session.add(user)
