@@ -20,6 +20,13 @@
 
 > now you can visit this [url](http://127.0.0.1:5000/graphql)
 
+# feature
+
+- add `offset` `limit` `totalCount` to pagination
+- auto add `dbId` for model's database id
+- just edit your model, auto genarate query `model`,`modelList` and mutation `createModel`,`updateModel`,`deleteModel`
+- mutation auto return `ok` for success,`message` for more information and `output` for model data
+
 # Tutorial
 read the code [example_app](https://github.com/goodking-bq/flask-sqlalchemy-graphene-example)
 and this this file [graphene.py](https://github.com/goodking-bq/flask-sqlalchemy-graphene-example/blob/master/example_app/utils/graphene.py) is very import.
@@ -116,6 +123,58 @@ and got this
           ]
         }
       }
+    }
+  }
+}
+```
+3. ## query and pagination,use `offset`,`limit`,`totalCount`
+```graphql
+query{
+  userList(offset:0,limit:2){
+    totalCount
+    edges{
+      node{
+        id
+        name
+      }
+    }
+  },
+  roleList{
+    totalCount
+    edges{
+      node{
+        id
+        name
+      }
+    }
+  }
+}
+```
+result is :
+```json
+{
+  "data": {
+    "userList": {
+      "totalCount": 1,
+      "edges": [
+        {
+          "node": {
+            "id": "VXNlck91dHB1dFR5cGU6MQ==",
+            "name": "changename"
+          }
+        }
+      ]
+    },
+    "roleList": {
+      "totalCount": 1,
+      "edges": [
+        {
+          "node": {
+            "id": "Um9sZU91dHB1dFR5cGU6MQ==",
+            "name": "admin"
+          }
+        }
+      ]
     }
   }
 }
