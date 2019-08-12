@@ -44,6 +44,8 @@ class SQLAlchemyInputObjectType(graphene.InputObjectType):
         # Add all of the fields to the input type
         for key, value in sqla_fields.items():
             if not (isinstance(value, Dynamic) or hasattr(cls, key)):
+                if key.endswith("_id"):
+                    value = graphene.ID(description="Global Id")
                 setattr(cls, key, value)
 
         super(SQLAlchemyInputObjectType, cls).__init_subclass_with_meta__(**options)
