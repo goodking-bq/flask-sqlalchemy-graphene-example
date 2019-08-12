@@ -51,6 +51,10 @@ class SQLAlchemyInputObjectType(graphene.InputObjectType):
         super(SQLAlchemyInputObjectType, cls).__init_subclass_with_meta__(**options)
 
 
+class DatabaseId(graphene.Interface):
+    db_id = graphene.Int()
+
+
 class SQLAlchemyObjectTypes(object):
     """SQLAlchemyObjectType 不能创建多次，要不然会报错，这个类解决这个问题, 这个类是单例模式"""
 
@@ -67,8 +71,10 @@ class SQLAlchemyObjectTypes(object):
         if name in self.all_types:
             return self.all_types.get(name)
         else:
+            if hasattr(model, "id"):
+                model.db_id = model.id
             t = SQLAlchemyObjectType.create_type(
-                name, model=model, interfaces=(graphene.relay.Node,)
+                name, model=model, interfaces=(graphene.relay.Node, DatabaseId)
             )
             self.all_types[name] = t
             return t

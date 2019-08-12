@@ -118,7 +118,7 @@ class CustomConnection(graphene.relay.Connection):
 
 
 def model_connection(model):
-    connection = graphene.relay.Connection.create_type(
+    connection = CustomConnection.create_type(
         model.__name__ + "Connection", node=SQLAlchemyObjectTypes().get(model)
     )
     return CustomConnectionField(
