@@ -17,14 +17,15 @@ class SQLAlchemyInputObjectType(graphene.InputObjectType):
     def __init_subclass_with_meta__(
         cls, model=None, registry=None, only_fields=[], exclude_fields=[], **options
     ):
-        # always pull 'id' out to a separate id argumentF
-        exclude_fields.append("id")
         if not registry:
             registry = get_global_registry()
         autoexclude = []
-
+        foreign_keys = []
         # always pull ids out to a separate argument
         for col in sqlalchemy.inspect(model).columns:
+            if col.foreign_keys:
+                foreign_keys.append(col.name)
+                continue
             if (col.primary_key and col.autoincrement) or (
                 isinstance(col.type, sqlalchemy.types.TIMESTAMP)
                 and col.server_default is not None
@@ -44,7 +45,7 @@ class SQLAlchemyInputObjectType(graphene.InputObjectType):
         # Add all of the fields to the input type
         for key, value in sqla_fields.items():
             if not (isinstance(value, Dynamic) or hasattr(cls, key)):
-                if key.endswith("_id"):
+                if key in foreign_keys:
                     value = graphene.ID(description="Global Id")
                 setattr(cls, key, value)
 
